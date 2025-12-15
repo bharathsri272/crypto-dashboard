@@ -1,0 +1,59 @@
+.crypto-card {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.crypto-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header img {
+  width: 32px;
+  height: 32px;
+}
+
+.card-header strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.card-header .symbol {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-top: 2px;
+  display: block;
+}
+
+.symbol {
+  display: block;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.green {
+  color: green;
+}
+
+.red {
+  color: red;
+}
+
+.star {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: #facc15;
+}
+
+.star:hover {
+  transform: scale(1.1);
+}
