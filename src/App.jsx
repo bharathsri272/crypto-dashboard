@@ -16,14 +16,22 @@ export default function App() {
         const API_BASE = "https://crypto-dashboard-8901.onrender.com";
         const res = await fetch(`${API_BASE}/api/coins`);
         const data = await res.json();
+<<<<<<< Updated upstream
   
+=======
+
+>>>>>>> Stashed changes
         // 🔒 CRITICAL SAFETY CHECK
         if (!Array.isArray(data)) {
           console.error("Invalid coins response:", data);
           setCoins([]); // prevent crash
           return;
         }
+<<<<<<< Updated upstream
   
+=======
+
+>>>>>>> Stashed changes
         setCoins(data);
       } catch (err) {
         console.error("Coin fetch failed:", err);
