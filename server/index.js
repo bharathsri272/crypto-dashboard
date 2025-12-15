@@ -21,6 +21,37 @@ const COINGECKO_COINS_URL =
   "&price_change_percentage=24h";
 
 /* ===============================
+   FALLBACK DATA (CRITICAL)
+================================ */
+
+const FALLBACK_COINS = [
+  {
+    id: "bitcoin",
+    name: "Bitcoin",
+    symbol: "btc",
+    current_price: 0,
+    price_change_percentage_24h: 0,
+    image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+  },
+  {
+    id: "ethereum",
+    name: "Ethereum",
+    symbol: "eth",
+    current_price: 0,
+    price_change_percentage_24h: 0,
+    image: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+  },
+  {
+    id: "solana",
+    name: "Solana",
+    symbol: "sol",
+    current_price: 0,
+    price_change_percentage_24h: 0,
+    image: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+  },
+];
+
+/* ===============================
    CACHES
 ================================ */
 
@@ -58,9 +89,7 @@ app.get("/api/coins", async (req, res) => {
     // HARD VALIDATION
     if (!Array.isArray(data)) {
       console.error("CoinGecko error:", data);
-
-      // Fallback to cache or empty array
-      return res.json(coinsCache ?? []);
+      return res.json(coinsCache ?? FALLBACK_COINS);
     }
 
     coinsCache = data;
@@ -69,7 +98,7 @@ app.get("/api/coins", async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error("Coin fetch failed:", err);
-    res.json(coinsCache ?? []);
+    res.json(coinsCache ?? FALLBACK_COINS);
   }
 });
 
@@ -89,7 +118,6 @@ app.get("/api/chart/:coinId/:days", async (req, res) => {
     const response = await fetch(url);
     const data = await response.json();
 
-    // Validate chart shape
     if (!data || !Array.isArray(data.prices)) {
       console.error("Invalid chart data:", data);
       return res.json(chartCache[key]?.data ?? { prices: [] });
