@@ -7,7 +7,7 @@ A full‑stack cryptocurrency dashboard built with **React + Node.js (Express)**
 ## 🚀 Live Demo
 
 **Frontend (Vercel):**  
-👉 https://weather-dashboard-kappa-eight.vercel.app
+👉 https://crypto-dashboard-iota-five.vercel.app
 
 **Backend API (Render):**  
 👉 https://crypto-dashboard-8901.onrender.com
