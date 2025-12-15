@@ -1,89 +1,84 @@
 import express from "express";
 import cors from "cors";
-const chartCache = {};
-const CHART_TTL = 5 * 60 * 1000;
+import fetch from "node-fetch";
+
 const app = express();
 app.use(cors());
 
 const PORT = process.env.PORT || 5050;
 
-// In-memory cache
-const cache = {};
-const TTL = 5 * 60 * 1000; // 5 minutes
+/* ===============================
+   CONSTANTS
+================================ */
+const COINGECKO_COINS_URL =
+  "https://api.coingecko.com/api/v3/coins/markets" +
+  "?vs_currency=usd&order=market_cap_desc&per_page=20&page=1" +
+  "&sparkline=false&price_change_percentage=24h";
 
-async function cachedFetch(key, url) {
-  const now = Date.now();
+/* ===============================
+   CACHES
+================================ */
+let coinsCache = null;
+let coinsLastFetch = 0;
+const COINS_TTL = 60_000; // 1 minute
 
-  if (cache[key] && now - cache[key].time < TTL) {
-    return cache[key].data;
-  }
+const chartCache = {};
+const CHART_TTL = 5 * 60 * 1000; // 5 minutes
 
-  const res = await fetch(url);
-  const data = await res.json();
+/* ===============================
+   ROUTES
+================================ */
 
-  cache[key] = { data, time: now };
-  return data;
-}
-
-// Test route
+// Health check
 app.get("/api/test", (req, res) => {
   res.json({ ok: true });
 });
 
-let cachedCoins = null;
-let lastFetch = 0;
-
-// Coins list
-
+// Coins list (CACHED)
 app.get("/api/coins", async (req, res) => {
   const now = Date.now();
 
-  // Cache for 60 seconds
-  if (cachedCoins && now - lastFetch < 60_000) {
-    return res.json(cachedCoins);
+  if (coinsCache && now - coinsLastFetch < COINS_TTL) {
+    return res.json(coinsCache);
   }
 
   try {
-    const response = await fetch(COINGECKO_URL);
+    const response = await fetch(COINGECKO_COINS_URL);
     const data = await response.json();
 
-    cachedCoins = data;
-    lastFetch = now;
+    coinsCache = data;
+    coinsLastFetch = now;
 
     res.json(data);
   } catch (err) {
+    console.error("Coin fetch failed:", err);
     res.status(500).json({ error: "Failed to fetch coins" });
   }
 });
 
-// Chart data (ALWAYS returns something)
+// Chart data (CACHED PER COIN + RANGE)
 app.get("/api/chart/:coinId/:days", async (req, res) => {
   const { coinId, days } = req.params;
-  const cacheKey = `${coinId}_${days}`;
+  const key = `${coinId}_${days}`;
   const now = Date.now();
 
-  // Serve cached data if fresh
-  if (
-    chartCache[cacheKey] &&
-    now - chartCache[cacheKey].timestamp < CHART_TTL
-  ) {
-    return res.json(chartCache[cacheKey].data);
+  if (chartCache[key] && now - chartCache[key].time < CHART_TTL) {
+    return res.json(chartCache[key].data);
   }
 
   try {
     const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`;
-
     const response = await fetch(url);
     const data = await response.json();
 
-    // Save to cache
-    chartCache[cacheKey] = {
-      data,
-      timestamp: now,
-    };
-
+    chartCache[key] = { data, time: now };
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch chart data" });
+    console.error("Chart fetch failed:", err);
+    res.status(500).json({ error: "Chart unavailable" });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Backend running at http://localhost:${PORT}`);
 });
