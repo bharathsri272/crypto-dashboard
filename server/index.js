@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-
+const chartCache = {};
+const CHART_TTL = 5 * 60 * 1000;
 const app = express();
 app.use(cors());
 
@@ -29,35 +30,60 @@ app.get("/api/test", (req, res) => {
   res.json({ ok: true });
 });
 
+let cachedCoins = null;
+let lastFetch = 0;
+
 // Coins list
+
 app.get("/api/coins", async (req, res) => {
+  const now = Date.now();
+
+  // Cache for 60 seconds
+  if (cachedCoins && now - lastFetch < 60_000) {
+    return res.json(cachedCoins);
+  }
+
   try {
-    const data = await cachedFetch(
-      "coins",
-      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h"
-    );
+    const response = await fetch(COINGECKO_URL);
+    const data = await response.json();
+
+    cachedCoins = data;
+    lastFetch = now;
+
     res.json(data);
-  } catch {
-    res.json([]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch coins" });
   }
 });
 
 // Chart data (ALWAYS returns something)
-app.get("/api/chart/:id/:days", async (req, res) => {
-  const { id, days } = req.params;
-  const key = `${id}-${days}`;
+app.get("/api/chart/:coinId/:days", async (req, res) => {
+  const { coinId, days } = req.params;
+  const cacheKey = `${coinId}_${days}`;
+  const now = Date.now();
+
+  // Serve cached data if fresh
+  if (
+    chartCache[cacheKey] &&
+    now - chartCache[cacheKey].timestamp < CHART_TTL
+  ) {
+    return res.json(chartCache[cacheKey].data);
+  }
 
   try {
-    const data = await cachedFetch(
-      key,
-      `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`
-    );
-    res.json({ prices: data.prices || [] });
-  } catch {
-    res.json({ prices: cache[key]?.data?.prices || [] });
-  }
-});
+    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend running on port ${PORT}`);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Save to cache
+    chartCache[cacheKey] = {
+      data,
+      timestamp: now,
+    };
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch chart data" });
+  }
 });
