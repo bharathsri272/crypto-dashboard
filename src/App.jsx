@@ -12,8 +12,9 @@ export default function App() {
 
   useEffect(() => {
     async function fetchCoins() {
+      const API_BASE = "https://crypto-dashboard-8901.onrender.com";
       const res = await fetch(
-        "http://127.0.0.1:5050/api/coins"
+        `${API_BASE}/api/coins`
       );
       const data = await res.json();
       setCoins(data);
