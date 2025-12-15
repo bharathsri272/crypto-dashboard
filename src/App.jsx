@@ -12,14 +12,25 @@ export default function App() {
 
   useEffect(() => {
     async function fetchCoins() {
-      const API_BASE = "https://crypto-dashboard-8901.onrender.com";
-      const res = await fetch(
-        `${API_BASE}/api/coins`
-      );
-      const data = await res.json();
-      setCoins(data);
+      try {
+        const API_BASE = "https://crypto-dashboard-8901.onrender.com";
+        const res = await fetch(`${API_BASE}/api/coins`);
+        const data = await res.json();
+  
+        // 🔒 CRITICAL SAFETY CHECK
+        if (!Array.isArray(data)) {
+          console.error("Invalid coins response:", data);
+          setCoins([]); // prevent crash
+          return;
+        }
+  
+        setCoins(data);
+      } catch (err) {
+        console.error("Coin fetch failed:", err);
+        setCoins([]); // fail safely
+      }
     }
-
+  
     fetchCoins();
     const interval = setInterval(fetchCoins, 30000);
     return () => clearInterval(interval);
