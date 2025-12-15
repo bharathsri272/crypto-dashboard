@@ -21,8 +21,9 @@ export default function CoinModal({ coin, onClose }) {
 
       try {
         setLoading(true);
+        const API_BASE = "https://crypto-dashboard-8901.onrender.com";
         const res = await fetch(
-          `http://127.0.0.1:5050/api/chart/${coin.id}/${range}`
+          `${API_BASE}/api/chart/${coin.id}/${range}`
         );
         const data = await res.json();
 
